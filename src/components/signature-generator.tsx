@@ -9,7 +9,7 @@ import { signatureFormSchema, SignatureFormValues } from '@/types/signature';
 import { signatureTemplates } from '@/templates/signature-templates';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { copyToClipboard, downloadHTML, formatPhoneNumber } from '@/lib/utils';
+import { copyToClipboard, downloadHTML, downloadForGmail, formatPhoneNumber, prepareForGmail } from '@/lib/utils';
 
 export default function SignatureGenerator() {
   const [activeTemplate, setActiveTemplate] = useState(signatureTemplates[0]);
@@ -51,7 +51,7 @@ export default function SignatureGenerator() {
   });
 
   const watchedValues = watch();
-  
+
   // Atualiza a pré-visualização em tempo real quando os valores do formulário ou o template mudam
   useEffect(() => {
     try {
@@ -116,22 +116,134 @@ export default function SignatureGenerator() {
     setValue('whatsapp', formattedPhone);
   };
 
-  const onSubmit = (data: SignatureFormValues) => {
+  // Função para gerar a assinatura
+  const handleGenerateSignature = (data: SignatureFormValues) => {
+    console.log("Função handleGenerateSignature executada", data);
     try {
+      console.log("Gerando HTML da assinatura...");
       const html = activeTemplate.generateHTML(data);
+      console.log("HTML gerado com sucesso:", html.substring(0, 50) + "...");
+
+      console.log("Atualizando estado com o HTML gerado");
       setGeneratedHTML(html);
+
+      console.log("Exibindo toast de sucesso");
       toast({
         title: 'Assinatura gerada com sucesso!',
         description: 'Agora você pode copiar ou baixar sua assinatura.',
       });
+
+      console.log("Retornando HTML gerado");
+      return html;
     } catch (error) {
+      console.error("Erro em handleGenerateSignature:", error);
       toast({
         title: 'Erro ao gerar assinatura',
         description: 'Ocorreu um erro ao gerar sua assinatura. Tente novamente.',
         variant: 'destructive',
       });
+      return null;
     }
   };
+
+  // Função para copiar a assinatura para o email
+  const handleCopyToEmail = (data: SignatureFormValues) => {
+    console.log("Função handleCopyToEmail executada", data);
+    try {
+      // Gerar o HTML diretamente usando activeTemplate em vez de chamar handleGenerateSignature
+      // para evitar possíveis problemas de retorno
+      console.log("Gerando HTML diretamente...");
+      let html;
+      try {
+        html = activeTemplate.generateHTML(data);
+        console.log("HTML gerado diretamente:", html ? html.substring(0, 50) + "..." : "Falha");
+
+        // Atualizar o estado com o HTML gerado
+        setGeneratedHTML(html);
+      } catch (htmlError) {
+        console.error("Erro ao gerar HTML diretamente:", htmlError);
+        toast({
+          title: 'Erro ao gerar assinatura',
+          description: 'Ocorreu um erro ao gerar sua assinatura. Tente novamente.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (html) {
+        console.log("Tentando copiar para clipboard...");
+        copyToClipboard(html)
+          .then((success) => {
+            console.log("Resultado da cópia:", success ? "Sucesso" : "Falha");
+            if (success) {
+              console.log("Copiado para o clipboard com sucesso");
+              toast({
+                title: 'Assinatura de email gerada!',
+                description: 'A assinatura foi copiada para a área de transferência e está pronta para ser colada no seu cliente de email.',
+              });
+            } else {
+              console.error("Falha ao copiar para o clipboard");
+              toast({
+                title: 'Erro ao copiar para o clipboard',
+                description: 'Não foi possível copiar a assinatura. Tente novamente.',
+                variant: 'destructive',
+              });
+            }
+          })
+          .catch((error) => {
+            console.error("Erro ao copiar para o clipboard:", error);
+            toast({
+              title: 'Erro ao copiar para o clipboard',
+              description: 'Ocorreu um erro ao copiar a assinatura. Tente novamente.',
+              variant: 'destructive',
+            });
+          });
+      }
+    } catch (error) {
+      console.error("Erro em handleCopyToEmail:", error);
+      toast({
+        title: 'Erro ao processar assinatura',
+        description: 'Ocorreu um erro ao processar a assinatura. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Função para copiar a assinatura para o Gmail
+  const handleCopyToGmail = (data: SignatureFormValues) => {
+    const html = handleGenerateSignature(data);
+    if (html) {
+      prepareForGmail(html).then((success) => {
+        if (success) {
+          toast({
+            title: 'Assinatura pronta para o Gmail!',
+            description: 'A assinatura foi formatada e copiada. Cole-a diretamente nas configurações do Gmail.',
+          });
+        } else {
+          toast({
+            title: 'Erro ao preparar para o Gmail',
+            description: 'Não foi possível preparar a assinatura para o Gmail. Tente novamente.',
+            variant: 'destructive',
+          });
+        }
+      });
+    }
+  };
+
+  // Função para baixar a assinatura para o Gmail
+  const handleDownloadForGmail = (data: SignatureFormValues) => {
+    console.log("gerar email")
+    const html = handleGenerateSignature(data);
+    if (html) {
+      downloadForGmail(html);
+      toast({
+        title: 'Arquivo para Gmail gerado!',
+        description: 'Baixe o arquivo HTML e importe-o nas configurações do Gmail.',
+      });
+    }
+  };
+
+  const onSubmit = handleGenerateSignature;
 
   const handleCopyHTML = () => {
     copyToClipboard(generatedHTML);
@@ -148,6 +260,7 @@ export default function SignatureGenerator() {
       description: 'O arquivo HTML da assinatura está sendo baixado.',
     });
   };
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -403,7 +516,7 @@ export default function SignatureGenerator() {
                             hover:file:bg-primary/80"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium mb-1">Ou URL da imagem</label>
                         <input
@@ -413,7 +526,7 @@ export default function SignatureGenerator() {
                           className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
-                      
+
                       {watchedValues.profileImage && (
                         <div className="mt-2">
                           <img
@@ -454,7 +567,7 @@ export default function SignatureGenerator() {
                             hover:file:bg-primary/80"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium mb-1">Ou URL da imagem</label>
                         <input
@@ -464,7 +577,7 @@ export default function SignatureGenerator() {
                           className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
-                      
+
                       {watchedValues.logoImage && (
                         <div className="mt-2">
                           <img
@@ -569,8 +682,9 @@ export default function SignatureGenerator() {
             {/* Botões de ação */}
             <div className="pt-4 flex flex-wrap gap-2">
               <Button
-                type="submit"
+                type="button"
                 className="w-full md:w-auto flex items-center justify-center gap-2"
+                onClick={() => handleSubmit(handleGenerateSignature)()}
               >
                 <RefreshCw className="h-4 w-4" />
                 Gerar assinatura
@@ -579,29 +693,28 @@ export default function SignatureGenerator() {
                 type="button"
                 variant="outline"
                 className="w-full md:w-auto flex items-center justify-center gap-2"
-                onClick={() => {
-                  handleSubmit((data) => {
-                    try {
-                      const html = activeTemplate.generateHTML(data);
-                      setGeneratedHTML(html);
-                      // Copia automaticamente para a área de transferência
-                      copyToClipboard(html);
-                      toast({
-                        title: 'Assinatura de email gerada!',
-                        description: 'A assinatura foi copiada para a área de transferência e está pronta para ser colada no seu cliente de email.',
-                      });
-                    } catch (error) {
-                      toast({
-                        title: 'Erro ao gerar assinatura',
-                        description: 'Ocorreu um erro ao gerar sua assinatura. Tente novamente.',
-                        variant: 'destructive',
-                      });
-                    }
-                  })();
-                }}
+                onClick={() => handleSubmit(handleCopyToEmail)()}
               >
                 <Copy className="h-4 w-4" />
                 Gerar e copiar para email
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full md:w-auto flex items-center justify-center gap-2"
+                onClick={() => handleSubmit(handleCopyToGmail)()}
+              >
+                <Copy className="h-4 w-4" />
+                Copiar para Gmail
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full md:w-auto flex items-center justify-center gap-2"
+                onClick={() => handleSubmit(handleDownloadForGmail)()}
+              >
+                <Download className="h-4 w-4" />
+                Baixar para Gmail
               </Button>
             </div>
           </form>
@@ -610,7 +723,7 @@ export default function SignatureGenerator() {
         {/* Pré-visualização */}
         <motion.div
           variants={itemVariants}
-          className="lg:col-span-5 bg-card rounded-xl shadow-lg p-6 flex flex-col"
+          className={`lg:col-span-5 bg-card rounded-xl shadow-lg p-6 flex flex-col ${previewMode && 'fixed top-40 right-40'}`}
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-primary">Pré-visualização</h2>
@@ -639,7 +752,23 @@ export default function SignatureGenerator() {
               previewMode ? (
                 <div className="signature-preview" dangerouslySetInnerHTML={{ __html: generatedHTML || livePreviewHTML }} />
               ) : (
-                <pre className="text-xs whitespace-pre-wrap overflow-x-auto">{generatedHTML || livePreviewHTML}</pre>
+                <div className="relative">
+                  <pre className="text-xs whitespace-pre-wrap overflow-x-auto">{generatedHTML || livePreviewHTML}</pre>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => copyToClipboard(generatedHTML || livePreviewHTML).then(() => {
+                      toast({
+                        title: 'Texto copiado!',
+                        description: 'O código HTML foi copiado para a área de transferência.',
+                      });
+                    })}
+                    className="absolute top-2 right-2 flex items-center gap-1 opacity-80 hover:opacity-100"
+                  >
+                    <Copy className="h-3 w-3" />
+                    Copiar
+                  </Button>
+                </div>
               )
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground">

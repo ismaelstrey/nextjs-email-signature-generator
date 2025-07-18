@@ -174,17 +174,18 @@ export const signatureTemplates: SignatureTemplate[] = [
   // Template 1: Clássico Horizontal
   {
     id: 'classic-horizontal',
-    name: 'Clássico Horizontal',
+    name: '1. Clássico Horizontal',
     description: 'Layout horizontal tradicional com foto à esquerda',
     thumbnail: '/templates/classic-horizontal.svg',
     generateHTML: (values: SignatureFormValues): string => {
       const fontSize = getFontSize(values.fontSize);
+      const borderStyle = getBorderStyle(values.borderStyle, values.primaryColor);
 
       return `
         <table style="font-family: ${values.fontFamily}; max-width: 600px; border-collapse: collapse;">
           <tr>
             ${values.showProfileImage && values.profileImage ? `
-              <td style="vertical-align: top; padding-right: 15px;">
+              <td style="vertical-align: top; padding-right: 15px; ${borderStyle}">
                 <img src="${values.profileImage}" alt="${values.name}" style="width: 100px; height: 100px; border-radius: 50%;">
               </td>
             ` : ''}
@@ -213,7 +214,7 @@ export const signatureTemplates: SignatureTemplate[] = [
   // Template 2: Moderno com Cores
   {
     id: 'modern-colored',
-    name: 'Moderno com Cores',
+    name: '2. Moderno com Cores',
     description: 'Design moderno com destaque em cores',
     thumbnail: '/templates/modern-colored.svg',
     generateHTML: (values: SignatureFormValues): string => {
@@ -253,11 +254,12 @@ export const signatureTemplates: SignatureTemplate[] = [
   // Template 3: Minimalista
   {
     id: 'minimalist',
-    name: 'Minimalista',
+    name: '3. Minimalista',
     description: 'Design limpo e minimalista',
     thumbnail: '/templates/minimalist.svg',
     generateHTML: (values: SignatureFormValues): string => {
       const fontSize = getFontSize(values.fontSize);
+      const borderStyle = getBorderStyle(values.borderStyle, values.primaryColor);
 
       return `
         <table style="font-family: ${values.fontFamily}; max-width: 500px; border-collapse: collapse;">
@@ -286,11 +288,12 @@ export const signatureTemplates: SignatureTemplate[] = [
   // Template 4: Corporativo com Borda
   {
     id: 'corporate-bordered',
-    name: 'Corporativo com Borda',
+    name: '4. Corporativo com Borda',
     description: 'Design profissional com borda destacada',
     thumbnail: '/templates/corporate-bordered.svg',
     generateHTML: (values: SignatureFormValues): string => {
       const fontSize = getFontSize(values.fontSize);
+      const borderStyle = getBorderStyle(values.borderStyle, values.primaryColor);
 
       return `
         <table style="font-family: ${values.fontFamily}; max-width: 600px; border-collapse: collapse; border-left: 4px solid ${values.primaryColor}; padding-left: 15px;">
@@ -325,11 +328,12 @@ export const signatureTemplates: SignatureTemplate[] = [
   // Template 5: Cartão de Visita
   {
     id: 'business-card',
-    name: 'Cartão de Visita',
+    name: '5. Cartão de Visita',
     description: 'Layout inspirado em cartão de visita',
     thumbnail: '/templates/business-card.svg',
     generateHTML: (values: SignatureFormValues): string => {
       const fontSize = getFontSize(values.fontSize);
+      const borderStyle = getBorderStyle(values.borderStyle, values.primaryColor);
 
       return `
         <table style="font-family: ${values.fontFamily}; max-width: 500px; border-collapse: collapse; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
