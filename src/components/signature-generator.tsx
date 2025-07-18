@@ -304,7 +304,7 @@ export default function SignatureGenerator() {
             <div className="space-y-2">
               <label className="block text-sm font-medium">Escolha um modelo</label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {signatureTemplates.map((template) => (
+                {signatureTemplates.map((template, key) => (
                   <div
                     key={template.id}
                     onClick={() => setActiveTemplate(template)}
@@ -317,6 +317,7 @@ export default function SignatureGenerator() {
                         className="w-full h-full object-cover"
                       />
                     </div>
+                    <p className="text-sm font-bold">{key}</p>
                     <p className="text-sm font-bold">{template.name}</p>
                     <p className="text-xs text-center">{template.description}</p>
                   </div>
