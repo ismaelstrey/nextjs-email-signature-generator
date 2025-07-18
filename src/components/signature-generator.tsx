@@ -317,6 +317,7 @@ export default function SignatureGenerator() {
                         className="w-full h-full object-cover"
                       />
                     </div>
+                    <p className="text-sm font-bold">{template.name}</p>
                     <p className="text-xs text-center">{template.description}</p>
                   </div>
                 ))}
